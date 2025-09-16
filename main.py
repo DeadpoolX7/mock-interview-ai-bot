@@ -11,21 +11,11 @@ st.set_page_config(page_title="AI Mock Interview", page_icon="🤖", layout="wid
 
 # Configure Gemini (user needs to set their API key)
 @st.cache_resource
-def configure_gemini():
-    # First, check secrets or env
-    api_key = st.secrets.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
-    
+def configure_gemini(api_key):
     if not api_key:
-        # Prompt user for their own key
-        st.sidebar.header("API Key Required")
-        api_key = st.sidebar.text_input(
-            "Enter your Google Gemini API Key (get one at https://aistudio.google.com/app/apikey):",
-            type="password"
-        )
-        if not api_key:
-            st.error("Please enter a valid Gemini API Key to proceed. The app uses this for generating questions and evaluations.")
-            st.info("Note: Using the app will consume your API quota/credits. Gemini 2.0 Flash is free for light usage, but check Google's pricing.")
-            st.stop()
+        st.error("Please enter a valid Gemini API Key to proceed. The app uses this for generating questions and evaluations.")
+        st.info("Note: Using the app will consume your API quota/credits. Gemini 2.0 Flash is free for light usage, but check Google's pricing.")
+        st.stop()
     
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel('gemini-2.0-flash')
@@ -99,10 +89,18 @@ def main():
     st.title("🤖 AI Mock Interview")
     st.markdown("Upload your resume, select a role, and get personalized interview questions!")
 
-    model = configure_gemini()
+    # Step 0: Get API key from user or secrets/env
+    st.sidebar.header("API Key Required")
+    api_key = st.sidebar.text_input(
+        "Enter your Google Gemini API Key (get one at https://aistudio.google.com/app/apikey):",
+        type="password",
+        value=st.secrets.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY") or ""
+    )
+
+    model = configure_gemini(api_key)
 
     # Step 1: Upload resume
-    uploaded_file = st.file_uploader("Upload your resume (PDF or Image)", type=['pdf'])
+    uploaded_file = st.file_uploader("Upload your resume (PDF Only)", type=['pdf'])
     resume_text = ""
     if uploaded_file:
         with st.spinner("Extracting text from resume..."):
